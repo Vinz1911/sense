@@ -37,7 +37,7 @@ namespace sense {
         /**
          * status if the HID is active
          */
-        bool is_active = false;
+        std::atomic<bool> is_active = false;
 
         /**
          * open the connection from a HID Device's path
@@ -88,7 +88,7 @@ namespace sense {
         /**
          * stores the connection
          */
-        int connection_ = {};
+        std::atomic<int> connection_ = {};
 
         /**
          * stores the input data
