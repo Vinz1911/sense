@@ -68,15 +68,13 @@ namespace sense {
 
     std::string DualSense::get_fstream_value(const std::string& path) {
         auto value = std::string();
-        auto fs = std::fstream();
-        fs.open(path, std::fstream::in);
-        fs >> value; fs.close(); return value;
+        stream_.open(path, std::fstream::in);
+        stream_ >> value; stream_.close(); return value;
     }
 
     template <typename T>
     void DualSense::set_fstream_value(const std::string& path, const T& value) {
-        auto fs = std::fstream();
-        fs.open(path, std::fstream::out);
-        fs << value; fs.close();
+        stream_.open(path, std::fstream::out);
+        stream_ << value; stream_.close();
     }
 } // namespace sense

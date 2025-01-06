@@ -5,6 +5,7 @@
 #include <vector>
 #include <map>
 #include <thread>
+#include <fstream>
 #include <linux/joystick.h>
 
 #include "constants.h"
@@ -108,6 +109,11 @@ namespace sense {
          * mutex lock for thread safety
          */
         std::mutex lock_;
+
+        /**
+         * file stream
+         */
+        std::fstream stream_;
 
         /**
          * read the gamepad input
