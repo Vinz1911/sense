@@ -1,88 +1,63 @@
 <div align="center">
     <h1>
         <br>
-            PSGamepad
+            Sense
         <br>
     </h1>
 </div>
 
-`PSGamepad` is a simple and easy way to deal with the PS4 Controller under Linux. It's fast and based on the `linux/joystick.h`, that means the input trigger is event based. So the `PSGamepad` is made async and non-blocking and runs on his own detached thread. 
-
-## Features:
-- [X] fast event based input reading
-- [X] dependency free
-- [X] read all buttons + axises
-- [X] set controller led (needs root rights)
-- [X] get controller capacity and status
+`Sense` is a simple and easy way to deal with the Dual Sense Controller in Linux. It's fast and based on the `linux/joystick.h`. Reads the input from `/dev/input/js0`. 
 
 ## License:
-[![License](https://img.shields.io/badge/license-GPLv3-blue.svg?longCache=true&style=flat)](https://github.com/Vinz1911/PSGamepad/blob/master/LICENSE)
+[![License](https://img.shields.io/badge/License-MIT-blue.svg?longCache=true&style=flat)](https://github.com/Vinz1911/Sense/blob/master/LICENSE)
 
 ## C++ Version:
-[![C++17](https://img.shields.io/badge/C++-17-blue.svg?logo=c%2B%2B&style=flat)](https://isocpp.org)
+[![C++23](https://img.shields.io/badge/C++-23-blue.svg?logo=c%2B%2B&style=flat)](https://isocpp.org)
 
 ## Import:
 ```cpp
 // include the header file from the project
-#include <ps_gamepad.h>
+#include <sense/dualsense.h>
+#include <sense/constants.h>
 
-// create instance of the gamepad 
-PSGamepad gamepad = PSGamepad();
-if(!gamepad.set_open()) {
-    // handle error
-}
+auto dual_sense = sense::DualSense();
+if(!dual_sense.set_open()) { printf("Failed to open path\n"); return -1; }
 ```
 
-## Building:
-Compile the projects using `make`.
-- GamepadDemo: `make GamepadDemo`
-- KeyMap: `make KeyMap`
-
-This places an executable in the working directory.
-Installation targets are currently not available, just copy the executable to `/usr/local/bin`.
+## Build and Install:
+Compile the projects using `cmake`.
+```sh
+# in root directory
+mkdir build
+cd build/
+cmake ..
+make && make install
+```
 
 ## Usage:
 ### Read input data:
 ```cpp
-// read controller input, this is non blocking.
-gamepad.get_input([&](std::vector<int> input){
-    if (input.empty()) {
-        // handle error
-    }
-    // EVENT_TYPE = 0
-    if (input[EVENT_TYPE] == JS_EVENT_BUTTON) {
-        // EVENT_NUMBER = 1
-        if (input[EVENT_NUMBER] == BUTTON_CROSS) {
-            // EVENT_VALUE = 2
-            printf("BUTTON CROSS: %i\n", input[EVENT_VALUE]);
-        }
-    }
-});
+auto dual_sense = sense::DualSense();
+if(!dual_sense.set_open()) { printf("Failed to open path\n"); return -1; }
+
+while (dual_sense.is_active) {
+    const auto trigger = dual_sense.axis[AXIS_RIGHT_TRIGGER];
+    const auto button_x = dual_sense.buttons[BUTTON_CROSS];
+
+    printf("trigger value %i, button value: %i\n", trigger, button_x);
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+}
 ```
 
 ### Get status infos and set LED:
 ```cpp
-// this is a example for the mac, you need the mac from your controller...
-#define GAMEPAD_MAC "a4:ae:11:c6:13:c2"
+auto dual_sense = sense::DualSense();
+if(!dual_sense.set_open()) { printf("failed to open path\n"); return 1; }
 
-// ...same for the LED's
-#define GAMEPAD_RED_LED "0005:054C:09CC.0005:red"
-#define GAMEPAD_GREEN_LED "0005:054C:09CC.0005:green"
-#define GAMEPAD_BLUE_LED "0005:054C:09CC.0005:blue"
+printf("Controller Capacity: %s\n", dual_sense.get_device_info()[0].c_str());
+printf("Controller Status: %s\n", dual_sense.get_device_info()[1].c_str());
 
-#define GAMEPAD_CAPACITY 0
-#define GAMEPAD_STATUS 1
-
-printf("Controller Capacity: %s\n", gamepad.get_device_info(GAMEPAD_MAC)[GAMEPAD_CAPACITY].c_str());
-printf("Controller Status: %s\n", gamepad.get_device_info(GAMEPAD_MAC)[GAMEPAD_STATUS].c_str());
-
-printf("RED LED Brightness: %i\n", gamepad.get_led_brightness(GAMEPAD_RED_LED));
-printf("GREEN LED Brightness: %i\n", gamepad.get_led_brightness(GAMEPAD_GREEN_LED));
-printf("BLUE LED Brightness: %i\n", gamepad.get_led_brightness(GAMEPAD_BLUE_LED));
-
-gamepad.set_led_brightness(GAMEPAD_RED_LED, 0);
-gamepad.set_led_brightness(GAMEPAD_GREEN_LED, 255);
-gamepad.set_led_brightness(GAMEPAD_BLUE_LED, 255);
+dual_sense.set_led_color(128, 0, 255);
 ```
 
 ## Author:
