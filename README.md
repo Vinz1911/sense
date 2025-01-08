@@ -54,6 +54,7 @@ while (sense.is_active) {
 auto sense = sense::DualSense();
 if(!sense.set_open()) { printf("failed to open path\n"); return 1; }
 
+auto info = sense.get_device_info();
 printf("status: %s\n", info[sense::STATUS].c_str());
 printf("capacity: %s\n", info[sense::CAPACITY].c_str());
 
