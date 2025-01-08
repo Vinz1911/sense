@@ -2,7 +2,6 @@
 #define SENSE_INPUT_H
 
 #include <string>
-#include <vector>
 #include <map>
 #include <thread>
 #include <fstream>
@@ -77,7 +76,7 @@ namespace sense {
          * [0]: CAPACITY
          * [1]: STATUS
          */
-        std::vector<std::string> get_device_info();
+        std::map<SenseStatusConstants, std::string> get_device_info();
 
     private:
         /**
