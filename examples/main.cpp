@@ -11,9 +11,10 @@ int main() {
 
     sense.set_led_color(128, 0, 255);
 
-    while (sense.is_active.load(std::memory_order::relaxed)) {
-        const auto trigger = sense.axis[sense::AXIS_RIGHT_TRIGGER];
-        const auto button_x = sense.buttons[sense::BUTTON_CROSS];
+    while (sense.is_active()) {
+        auto buttons = sense.get_buttons(); auto axis = sense.get_axis();
+        const auto trigger = axis[sense::AXIS_RIGHT_TRIGGER];
+        const auto button_x = buttons[sense::BUTTON_CROSS];
 
         printf("trigger value %i, button value: %i\n", trigger, button_x);
         std::this_thread::sleep_for(std::chrono::milliseconds(100));

@@ -24,22 +24,12 @@ namespace sense {
         ~DualSense();
 
         /**
-         * button values
-         */
-        std::map<SenseButtonConstants, int16_t> buttons;
-
-        /**
-         * axis values
-         */
-        std::map<SenseAxisConstants, int16_t> axis;
-
-        /**
          * status if the HID is active
          */
-        std::atomic<bool> is_active = false;
+        bool is_active() const;
 
         /**
-         * open the connection from a HID Device's path
+         * open the connection to a HID Device's path
          * @return bool indicates success
          */
         bool set_open();
@@ -49,6 +39,18 @@ namespace sense {
          * @return bool indicates success
          */
         bool set_close();
+
+        /**
+         * @brief get buttons
+         * @return map of buttons and values
+         */
+        std::map<SenseButtonConstants, int16_t> get_buttons();
+
+        /**
+         * @brief get axis
+         * @return map of axis and values
+         */
+        std::map<SenseAxisConstants, int16_t> get_axis();
 
         /**
          * set the LED's of the HID
@@ -90,6 +92,21 @@ namespace sense {
         std::atomic<int> connection_ = {};
 
         /**
+         * status if the HID is active
+         */
+        std::atomic<bool> is_active_ = false;
+
+        /**
+         * button values
+         */
+        std::map<SenseButtonConstants, int16_t> buttons_;
+
+        /**
+         * axis values
+         */
+        std::map<SenseAxisConstants, int16_t> axis_;
+
+        /**
          * stores the input data
          */
         js_event event_ = {};
@@ -124,7 +141,7 @@ namespace sense {
          * @param path the path to read from
          * @return the value
          */
-        std::string get_fstream_value(const std::string& path);
+        std::string get_value(const std::string& path);
 
         /**
          * set data to a fstream
@@ -132,7 +149,7 @@ namespace sense {
          * @param value the value to write
          */
         template <typename T>
-        void set_fstream_value(const std::string& path, const T& value);
+        void set_value(const std::string& path, const T& value);
     };
 } // namespace sense
 
