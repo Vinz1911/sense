@@ -8,7 +8,7 @@ set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # Source files
-set(SRC_LIST src/dualsense.cpp)
+set(SRC_LIST src/dualsense.cpp src/pathfinder.cpp)
 include_directories(${CMAKE_SOURCE_DIR}/include)
 
 # Build shared library

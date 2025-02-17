@@ -1,12 +1,5 @@
-<div align="center">
-    <h1>
-        <br>
-            Sense
-        <br>
-    </h1>
-</div>
-
-`Sense` is a simple and easy way to deal with the Dual Sense Controller in Linux. It's fast and based on the `linux/joystick.h`. Reads the input from `/dev/input/js0`. 
+# Sense
+**Sense** is a simple and easy way to deal with the Dual Sense Controller in Linux. It's fast and based on the `linux/joystick.h`. Reads the input from `/dev/input/js0`. 
 
 ## License:
 [![License](https://img.shields.io/badge/License-MIT-blue.svg?longCache=true&style=flat)](https://github.com/Vinz1911/Sense/blob/master/LICENSE)
@@ -58,7 +51,7 @@ auto info = sense.get_device_info();
 printf("status: %s\n", info[sense::STATUS].c_str());
 printf("capacity: %s\n", info[sense::CAPACITY].c_str());
 
-sense.set_led_color(128, 0, 255);
+sense.set_led(128, 0, 255);
 ```
 
 ## Author:

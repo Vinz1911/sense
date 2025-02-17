@@ -1,155 +1,165 @@
 #ifndef SENSE_INPUT_H
 #define SENSE_INPUT_H
 
+#include <array>
 #include <string>
 #include <map>
 #include <thread>
-#include <fstream>
 #include <linux/joystick.h>
 
 #include "constants.h"
+#include "pathfinder.h"
 
 namespace sense {
     class DualSense {
     public:
         /**
-         * initialize HID Device
-         * @param path -> input path, default is "/dev/input/js0"
+         * @brief create instance of `DualSense`.
+         * @param path input path, default is "/dev/input/js0".
+         * @param timeout the time before connection gets closed because of non responsibility.
          */
-        explicit DualSense(const char* path = "/dev/input/js0");
+        explicit DualSense(const char* path = "/dev/input/js0", uint16_t timeout = 1000);
 
         /**
-         * deconstruct object
+         * @brief destroy instance of `DualSense`.
          */
         ~DualSense();
 
         /**
-         * status if the HID is active
+         * @brief status if the device is active.
          */
-        bool is_active() const;
+        [[nodiscard]] bool is_active() const;
 
         /**
-         * open the connection to a HID Device's path
-         * @return bool indicates success
+         * @brief open the connection to a device's path.
+         * @return bool indicates success.
          */
         bool set_open();
 
         /**
-         * close the connection to a HID Device's path
-         * @return bool indicates success
+         * @brief close the connection to a device's path.
+         * @return bool indicates success.
          */
         bool set_close();
 
         /**
-         * @brief get buttons
-         * @return map of buttons and values
+         * @brief get buttons.
+         * @return map of buttons and values.
          */
         std::map<SenseButtonConstants, int16_t> get_buttons();
 
         /**
-         * @brief get axis
-         * @return map of axis and values
+         * @brief get axis.
+         * @return map of axis and values.
          */
         std::map<SenseAxisConstants, int16_t> get_axis();
 
         /**
-         * set the LED's of the HID
-         * @param brightness the brightness level 0-255
+         * @brief set the intensity values for Red, Green and Blue.
+         * @param red set level 0-255.
+         * @param green set level 0-255.
+         * @param blue set level 0-255.
+         * @param brightness set level 0-255.
          */
-        void set_led_brightness(uint8_t brightness);
+        void set_led(uint8_t red, uint8_t green, uint8_t blue, uint8_t brightness = 255);
 
         /**
-         * get the brightness level of a controller LED
-         * @return the brightness level 0-255
-         */
-        std::string get_led_brightness();
-
-        /**
-         * set the intensity values for Red, Green and Blue
-         * @param red set level 0-255
-         * @param green set level 0-255
-         * @param blue set level 0-255
-         */
-        void set_led_color(uint8_t red, uint8_t green, uint8_t blue);
-
-        /**
-         * get status infos from the HID Device
-         * @return a vector containing device info's
-         * [0]: CAPACITY
-         * [1]: STATUS
+         * @brief get status infos from the device.
+         * @return a vector containing device info's.
+         * [sense::STATUS] or [sense::CAPACITY].
          */
         std::map<SenseStatusConstants, std::string> get_device_info();
 
     private:
         /**
-         * stores the devices path
+         * @brief stores the devices path.
          */
         const char* device_path_;
 
         /**
-         * stores the connection
+         * @brief time before timout appears.
          */
-        std::atomic<int> connection_ = {};
+        uint16_t timeout_;
 
         /**
-         * status if the HID is active
+         * @brief pathfinder to get and set path values.
+         */
+        Pathfinder pathfinder_ = Pathfinder();
+
+        /**
+         * @brief stores the active js event path.
+         */
+        std::atomic<int> js_event_path_ = {};
+
+        /**
+         * @brief stores the active io event path.
+         */
+        std::atomic<int> io_event_path_ = {};
+
+        /**
+         * @brief status if the device is active.
          */
         std::atomic<bool> is_active_ = false;
 
         /**
-         * button values
+         * @brief button values.
          */
         std::map<SenseButtonConstants, int16_t> buttons_;
 
         /**
-         * axis values
+         * @brief axis values.
          */
         std::map<SenseAxisConstants, int16_t> axis_;
 
         /**
-         * stores the input data
+         * @brief stores the js event data.
          */
-        js_event event_ = {};
+        js_event js_event_ = {};
 
         /**
-         * check if terminated
+         * @brief stores the input event data.
+         */
+        input_event io_event_ = {};
+
+        /**
+         * @brief check if terminated.
          */
         std::atomic<bool> is_terminated_ = {false};
 
         /**
-         * input thread
+         * @brief thread pool.
          */
-        std::thread input_thread_ = {};
+        std::array<std::thread, 3> thread_pool_ = {};
 
         /**
-         * mutex lock for thread safety
+         *@brief mutex lock for thread safety.
          */
         std::mutex lock_;
 
         /**
-         * file stream
+         * @brief the current time for measuring possible timeout.
          */
-        std::fstream stream_;
+        std::atomic<std::chrono::high_resolution_clock::time_point> current_time_;
 
         /**
-         * read the gamepad input
+         * @brief set the input thread.
          */
-        void get_input();
+        void get_input_thread();
 
         /**
-         * get data from a fstream
-         * @param path the path to read from
-         * @return the value
+         * @brief set the motion thread.
          */
-        std::string get_value(const std::string& path);
+        void get_motion_thread();
 
         /**
-         * set data to a fstream
-         * @param path the path to write to
-         * @param value the value to write
+         * @brief set the timeout thread.
          */
-        template <typename T>
-        void set_value(const std::string& path, const T& value);
+        void get_timeout_thread();
+
+        /**
+         * @brief get the motion sensor event path.
+         */
+        static std::string get_motion_sensor_path();
     };
 } // namespace sense
 
