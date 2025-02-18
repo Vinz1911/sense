@@ -103,7 +103,7 @@ namespace sense {
         /**
          * @brief time before timout appears.
          */
-        uint16_t timeout_;
+        uint16_t grace_period_;
 
         /**
          * @brief pathfinder to get and set path values.
@@ -158,7 +158,7 @@ namespace sense {
         /**
          *@brief mutex lock for thread safety.
          */
-        std::mutex lock_;
+        std::mutex mutex_lock_;
 
         /**
          * @brief the current time for measuring possible timeout.
@@ -168,22 +168,22 @@ namespace sense {
         /**
          * @brief set the input thread.
          */
-        void get_input_thread();
+        void set_input_thread();
 
         /**
-         * @brief set the motion thread.
+         * @brief set the timestamp thread.
          */
-        void get_motion_thread();
+        void set_timestamp_thread();
 
         /**
          * @brief set the timeout thread.
          */
-        void get_timeout_thread();
+        void set_timeout_thread();
 
         /**
-         * @brief get the motion sensor event path.
+         * @brief get the sensor event path.
          */
-        static std::string get_motion_sensor_path();
+        static std::string get_sensor_path();
     };
 } // namespace sense
 

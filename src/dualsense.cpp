@@ -31,7 +31,7 @@
 #include "sense/dualsense.h"
 
 namespace sense {
-    DualSense::DualSense(const char* path, const uint16_t timeout): device_path_(path), timeout_(timeout) {
+    DualSense::DualSense(const char* path, const uint16_t timeout): device_path_(path), grace_period_(timeout) {
         buttons_ = { { BUTTON_CROSS, 0 }, { BUTTON_CIRCLE, 0 }, { BUTTON_TRIANGLE, 0 }, { BUTTON_SQUARE, 0 }, { BUTTON_SHOULDER_LEFT, 0 }, { BUTTON_SHOULDER_RIGHT, 0 }, { BUTTON_TRIGGER_LEFT, 0 }, { BUTTON_TRIGGER_RIGHT, 0 }, { BUTTON_SHARE, 0 }, { BUTTON_OPTIONS, 0 }, { BUTTON_PS, 0 }, { BUTTON_THUMB_LEFT, 0 }, { BUTTON_THUMB_RIGHT, 0 } };
         axis_ = { { AXIS_LEFT_THUMB_X, 0 }, { AXIS_LEFT_THUMB_Y, 0 }, { AXIS_LEFT_TRIGGER, -32767 }, { AXIS_RIGHT_THUMB_X, 0 }, { AXIS_RIGHT_THUMB_Y, 0 }, { AXIS_RIGHT_TRIGGER, -32767 }, { AXIS_D_PAD_LEFT_RIGHT, 0 }, { AXIS_D_PAD_UP_DOWN, 0 } };
     }
@@ -40,9 +40,9 @@ namespace sense {
 
     bool DualSense::set_open() {
         js_event_path_.store(open(device_path_, O_RDONLY), std::memory_order::relaxed);
-        if (timeout_ != 0) { io_event_path_.store(open(get_motion_sensor_path().c_str(), O_RDONLY), std::memory_order::relaxed); }
-        if (js_event_path_.load(std::memory_order::relaxed) != -1) { this->get_input_thread(); is_active_.store(true, std::memory_order::relaxed); }
-        if (io_event_path_.load(std::memory_order::relaxed) != -1 and timeout_ != 0) { this->get_motion_thread(); this->get_timeout_thread(); }
+        if (grace_period_ != 0) { io_event_path_.store(open(get_sensor_path().c_str(), O_RDONLY), std::memory_order::relaxed); }
+        if (js_event_path_.load(std::memory_order::relaxed) != -1) { this->set_input_thread(); is_active_.store(true, std::memory_order::relaxed); }
+        if (io_event_path_.load(std::memory_order::relaxed) != -1 and grace_period_ != 0) { this->set_timestamp_thread(); this->set_timeout_thread(); }
         return js_event_path_.load(std::memory_order::relaxed) != -1 and io_event_path_.load(std::memory_order::relaxed) != -1;
     }
 
@@ -58,11 +58,11 @@ namespace sense {
     }
 
     std::map<SenseButtonConstants, int16_t> DualSense::get_buttons() {
-        std::lock_guard lock(lock_); return buttons_;
+        std::lock_guard lock(mutex_lock_); return buttons_;
     }
 
     std::map<SenseAxisConstants, int16_t> DualSense::get_axis() {
-        std::lock_guard lock(lock_); return axis_;
+        std::lock_guard lock(mutex_lock_); return axis_;
     }
 
     void DualSense::set_led(const uint8_t red, const uint8_t green, const uint8_t blue, const uint8_t brightness) {
@@ -90,7 +90,7 @@ namespace sense {
         } return device_info;
     }
 
-    std::string DualSense::get_motion_sensor_path() {
+    std::string DualSense::get_sensor_path() {
         const std::string target = "Motion Sensors";
         for (const auto &entry : std::filesystem::directory_iterator("/dev/input/")) {
             if (entry.path().string().find("event") == std::string::npos) { continue; }
@@ -101,11 +101,11 @@ namespace sense {
         } return {};
     }
 
-    void DualSense::get_input_thread() {
+    void DualSense::set_input_thread() {
         thread_pool_[0] = std::thread([this] {
             while (!is_terminated_.load(std::memory_order::relaxed)) {
                 if (const ssize_t bytes = read(js_event_path_.load(std::memory_order::relaxed), &js_event_, sizeof(js_event_)); bytes == sizeof(js_event_)) {
-                    std::lock_guard lock(lock_);
+                    std::lock_guard lock(mutex_lock_);
                     if (js_event_.type == JS_EVENT_BUTTON) { buttons_[static_cast<SenseButtonConstants>(js_event_.number)] = js_event_.value; }
                     if (js_event_.type == JS_EVENT_AXIS) { axis_[static_cast<SenseAxisConstants>(js_event_.number)] = js_event_.value; }
                 } else { std::printf("[Sense]: error during read, terminating.\n"); set_close(); break; }
@@ -113,7 +113,7 @@ namespace sense {
         }); thread_pool_[0].detach();
     }
 
-    void DualSense::get_motion_thread() {
+    void DualSense::set_timestamp_thread() {
         current_time_.store(std::chrono::high_resolution_clock::now(), std::memory_order::relaxed);
         thread_pool_[1] = std::thread([this] {
             while (!is_terminated_.load(std::memory_order::relaxed)) {
@@ -125,9 +125,9 @@ namespace sense {
         }); thread_pool_[1].detach();
     }
 
-    void DualSense::get_timeout_thread() {
+    void DualSense::set_timeout_thread() {
         thread_pool_[2] = std::thread([this] {
-            const auto period = std::max(static_cast<uint16_t>(100), timeout_);
+            const auto period = std::max(static_cast<uint16_t>(100), grace_period_);
             while (!is_terminated_.load(std::memory_order::relaxed)) {
                 if (std::chrono::high_resolution_clock::now() >= current_time_.load(std::memory_order::relaxed) + std::chrono::milliseconds(period)) {
                     std::printf("[Sense]: timeout error.\n"); this->set_close();
