@@ -66,10 +66,17 @@ namespace sense {
     }
 
     void DualSense::set_led(const uint8_t red, const uint8_t green, const uint8_t blue, const uint8_t brightness) {
-        const std::string rgb_path = "/sys/class/leds/input9:rgb:indicator/multi_intensity";
-        const std::string brightness_path = "/sys/class/leds/input9:rgb:indicator/brightness";
+        std::string rgb_path; std::string brightness_path; bool device_found = false;
+        for (const auto& entry : std::filesystem::directory_iterator("/sys/class/leds/")) {
+            if (entry.is_directory() && entry.path().string().find(":rgb:indicator") != std::string::npos) {
+                rgb_path = entry.path().string() + "/multi_intensity";
+                brightness_path = entry.path().string() + "/brightness";
+                device_found = true; break;
+            }
+        }
+        if (!device_found) { std::printf("[Sense]: error, no valid rgb device found.\n"); return; }
         const std::string values = std::to_string(red) + " " + std::to_string(green) + " " + std::to_string(blue);
-        pathfinder_.set_value(rgb_path, values); pathfinder_.set_value(brightness_path, brightness);
+        pathfinder_.set_value(rgb_path, values); pathfinder_.set_value(brightness_path, std::to_string(brightness));
     }
 
     std::map<SenseStatusConstants, std::string> DualSense::get_device_info() {

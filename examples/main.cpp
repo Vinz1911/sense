@@ -29,18 +29,21 @@ int main() {
     auto sense = sense::DualSense();
     if(!sense.set_open()) { printf("failed to open path\n"); return 1; }
 
+    // get device information's like charging status or capacity.
     auto info = sense.get_device_info();
     printf("status: %s\n", info[sense::STATUS].c_str());
     printf("capacity: %s\n", info[sense::CAPACITY].c_str());
 
-    sense.set_led(128, 0, 255);
+    // update the rgb color of the device.
+    sense.set_led(64, 0, 255);
 
+    // get input while the device is reachable.
     while (sense.is_active()) {
         auto buttons = sense.get_buttons(); auto axis = sense.get_axis();
         const auto trigger = axis[sense::AXIS_RIGHT_TRIGGER];
-        const auto button_x = buttons[sense::BUTTON_CROSS];
+        const auto button = buttons[sense::BUTTON_CROSS];
 
-        std::printf("trigger value %i, button value: %i\n", trigger, button_x);
+        std::printf("trigger value %i, button value: %i\n", trigger, button);
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
     } return 0;
 }

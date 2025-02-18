@@ -27,6 +27,13 @@ cmake ..
 make && make install
 ```
 
+## Create udev rule to control LEDs:
+```shell
+# in "/etc/udev/rules.d/" for gpio group in rasberry pi
+sudo touch 99-leds.rules
+SUBSYSTEM=="leds", ACTION=="add", PROGRAM="/bin/sh -c 'chgrp -R gpio /sys%p && chmod -R g=u /sys%p'"
+```
+
 ## Usage:
 ### Read input data:
 ```cpp
