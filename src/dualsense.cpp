@@ -31,7 +31,9 @@
 #include "sense/dualsense.h"
 
 namespace sense {
-    DualSense::DualSense(const char* path, const uint16_t timeout): device_path_(path), grace_period_(timeout) {
+    static constexpr auto MEMORY_ORDER = std::memory_order::relaxed;
+
+    DualSense::DualSense(const char* path, const uint16_t timeout): device_path_(path), timeout_(timeout) {
         buttons_ = { { BUTTON_CROSS, 0 }, { BUTTON_CIRCLE, 0 }, { BUTTON_TRIANGLE, 0 }, { BUTTON_SQUARE, 0 }, { BUTTON_SHOULDER_LEFT, 0 }, { BUTTON_SHOULDER_RIGHT, 0 }, { BUTTON_TRIGGER_LEFT, 0 }, { BUTTON_TRIGGER_RIGHT, 0 }, { BUTTON_SHARE, 0 }, { BUTTON_OPTIONS, 0 }, { BUTTON_PS, 0 }, { BUTTON_THUMB_LEFT, 0 }, { BUTTON_THUMB_RIGHT, 0 } };
         axis_ = { { AXIS_LEFT_THUMB_X, 0 }, { AXIS_LEFT_THUMB_Y, 0 }, { AXIS_LEFT_TRIGGER, -32767 }, { AXIS_RIGHT_THUMB_X, 0 }, { AXIS_RIGHT_THUMB_Y, 0 }, { AXIS_RIGHT_TRIGGER, -32767 }, { AXIS_D_PAD_LEFT_RIGHT, 0 }, { AXIS_D_PAD_UP_DOWN, 0 } };
     }
@@ -39,22 +41,22 @@ namespace sense {
     DualSense::~DualSense() { set_close(); }
 
     bool DualSense::set_open() {
-        js_event_path_.store(open(device_path_, O_RDONLY), std::memory_order::relaxed);
-        if (grace_period_ != 0) { io_event_path_.store(open(get_sensor_path().c_str(), O_RDONLY), std::memory_order::relaxed); }
-        if (js_event_path_.load(std::memory_order::relaxed) != -1) { this->set_input_thread(); is_active_.store(true, std::memory_order::relaxed); }
-        if (io_event_path_.load(std::memory_order::relaxed) != -1 and grace_period_ != 0) { this->set_timestamp_thread(); this->set_timeout_thread(); }
-        return js_event_path_.load(std::memory_order::relaxed) != -1 and io_event_path_.load(std::memory_order::relaxed) != -1;
+        js_event_path_.store(open(device_path_, O_RDONLY), MEMORY_ORDER);
+        if (timeout_ != 0) { io_event_path_.store(open(get_sensor_path().c_str(), O_RDONLY), MEMORY_ORDER); }
+        if (js_event_path_.load(MEMORY_ORDER) != -1) { this->set_input_thread(); is_active_.store(true, MEMORY_ORDER); }
+        if (io_event_path_.load(MEMORY_ORDER) != -1 and timeout_ != 0) { this->set_timestamp_thread(); this->set_timeout_thread(); }
+        return js_event_path_.load(MEMORY_ORDER) != -1 and io_event_path_.load(MEMORY_ORDER) != -1;
     }
 
     bool DualSense::set_close() {
-        is_terminated_.store(true, std::memory_order::relaxed);
+        is_terminated_.store(true, MEMORY_ORDER);
         for (auto &thread : thread_pool_) { if (thread.joinable()) { thread.join(); } }
-        is_active_.store(false, std::memory_order::relaxed);
-        return close(js_event_path_.load(std::memory_order::relaxed)) != -1 and close(io_event_path_.load(std::memory_order::relaxed)) != -1;
+        is_active_.store(false, MEMORY_ORDER);
+        return close(js_event_path_.load(MEMORY_ORDER)) != -1 and close(io_event_path_.load(MEMORY_ORDER)) != -1;
     }
 
     bool DualSense::is_active() const {
-        return is_active_.load(std::memory_order::relaxed);
+        return is_active_.load(MEMORY_ORDER);
     }
 
     std::map<SenseButtonConstants, int16_t> DualSense::get_buttons() {
@@ -96,15 +98,15 @@ namespace sense {
             if (entry.path().string().find("event") == std::string::npos) { continue; }
             int fd = open(entry.path().c_str(), O_RDONLY); if (fd < 0) { continue; }
             if (char name[256] = {}; ioctl(fd, EVIOCGNAME(sizeof(name)), name) >= 0) {
-                if (std::string(name).find(target) != std::string::npos) { close(fd); return entry.path().string();  }
+                if (std::string(name).find(target) != std::string::npos) { close(fd); return entry.path().string(); }
             } close(fd);
         } return {};
     }
 
     void DualSense::set_input_thread() {
         thread_pool_[0] = std::thread([this] {
-            while (!is_terminated_.load(std::memory_order::relaxed)) {
-                if (const ssize_t bytes = read(js_event_path_.load(std::memory_order::relaxed), &js_event_, sizeof(js_event_)); bytes == sizeof(js_event_)) {
+            while (!is_terminated_.load(MEMORY_ORDER)) {
+                if (const ssize_t bytes = read(js_event_path_.load(MEMORY_ORDER), &js_event_, sizeof(js_event_)); bytes == sizeof(js_event_)) {
                     std::lock_guard lock(mutex_lock_);
                     if (js_event_.type == JS_EVENT_BUTTON) { buttons_[static_cast<SenseButtonConstants>(js_event_.number)] = js_event_.value; }
                     if (js_event_.type == JS_EVENT_AXIS) { axis_[static_cast<SenseAxisConstants>(js_event_.number)] = js_event_.value; }
@@ -114,12 +116,12 @@ namespace sense {
     }
 
     void DualSense::set_timestamp_thread() {
-        current_time_.store(std::chrono::high_resolution_clock::now(), std::memory_order::relaxed);
+        current_time_.store(std::chrono::high_resolution_clock::now(), MEMORY_ORDER);
         thread_pool_[1] = std::thread([this] {
-            while (!is_terminated_.load(std::memory_order::relaxed)) {
-                if (const ssize_t bytes = read(io_event_path_.load(std::memory_order::relaxed), &io_event_, sizeof(io_event_)); bytes == sizeof(io_event_)) {
+            while (!is_terminated_.load(MEMORY_ORDER)) {
+                if (const ssize_t bytes = read(io_event_path_.load(MEMORY_ORDER), &io_event_, sizeof(io_event_)); bytes == sizeof(io_event_)) {
                     if (io_event_.type != EV_MSC or io_event_.code != MSC_TIMESTAMP) { continue; }
-                    current_time_.store(std::chrono::high_resolution_clock::now(), std::memory_order::relaxed);
+                    current_time_.store(std::chrono::high_resolution_clock::now(), MEMORY_ORDER);
                 }
             }
         }); thread_pool_[1].detach();
@@ -127,10 +129,10 @@ namespace sense {
 
     void DualSense::set_timeout_thread() {
         thread_pool_[2] = std::thread([this] {
-            const auto period = std::max(static_cast<uint16_t>(100), grace_period_);
-            while (!is_terminated_.load(std::memory_order::relaxed)) {
-                if (std::chrono::high_resolution_clock::now() >= current_time_.load(std::memory_order::relaxed) + std::chrono::milliseconds(period)) {
-                    std::printf("[Sense]: timeout error.\n"); this->set_close();
+            const auto timeout = std::max(static_cast<uint16_t>(100), timeout_);
+            while (!is_terminated_.load(MEMORY_ORDER)) {
+                if (std::chrono::high_resolution_clock::now() >= current_time_.load(MEMORY_ORDER) + std::chrono::milliseconds(timeout)) {
+                    std::printf("[Sense]: error, run into timeout.\n"); this->set_close();
                 } std::this_thread::sleep_for(std::chrono::milliseconds(10));
             }
         }); thread_pool_[2].detach();

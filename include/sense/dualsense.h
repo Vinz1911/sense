@@ -103,7 +103,7 @@ namespace sense {
         /**
          * @brief time before timout appears.
          */
-        uint16_t grace_period_;
+        uint16_t timeout_;
 
         /**
          * @brief pathfinder to get and set path values.
