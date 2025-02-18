@@ -53,8 +53,7 @@ namespace sense {
          * @param path the path to write to
          * @param value the value to write
          */
-        template <typename T>
-        void set_value(const std::string& path, const T& value);
+        void set_value(const std::string& path, const std::string& value);
 
     private:
         /**

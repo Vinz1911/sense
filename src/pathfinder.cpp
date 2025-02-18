@@ -36,12 +36,8 @@ namespace sense {
         stream_ >> value; stream_.close(); return value;
     }
 
-    template <typename T>
-    void Pathfinder::set_value(const std::string& path, const T& value) {
+    void Pathfinder::set_value(const std::string& path, const std::string& value) {
         stream_.open(path, std::fstream::out);
         stream_ << value; stream_.close();
     }
-
-    template void Pathfinder::set_value<std::string>(const std::string&, const std::string&);
-    template void Pathfinder::set_value<uint8_t>(const std::string&, const uint8_t&);
 } // namespace sense
