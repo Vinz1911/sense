@@ -22,9 +22,7 @@
  * SOFTWARE.
  */
 
-#ifndef PATHFINDER_H
-#define PATHFINDER_H
-
+#pragma once
 #include <string>
 #include <fstream>
 
@@ -62,4 +60,3 @@ namespace sense {
         std::fstream stream_;
     };
 } // namespace sense
-#endif //PATHFINDER_H

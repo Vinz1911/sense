@@ -22,9 +22,8 @@
  * SOFTWARE.
  */
 
-#ifndef SENSE_INPUT_H
-#define SENSE_INPUT_H
 
+#pragma once
 #include <array>
 #include <string>
 #include <map>
@@ -186,5 +185,3 @@ namespace sense {
         static std::string get_sensor_path();
     };
 } // namespace sense
-
-#endif //SENSE_INPUT_H

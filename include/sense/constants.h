@@ -22,8 +22,7 @@
  * SOFTWARE.
  */
 
-#ifndef SENSE_CONSTANTS_H
-#define SENSE_CONSTANTS_H
+#pragma once
 
 namespace sense {
     enum SenseAxisConstants: uint8_t {
@@ -58,5 +57,3 @@ namespace sense {
         CAPACITY = 0x01,
     };
 } // namespace sense
-
-#endif //SENSE_CONSTANTS_H
