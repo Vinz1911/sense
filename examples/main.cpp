@@ -41,7 +41,7 @@ int main() {
 
     // get input while the device is reachable.
     while(is_running) {
-        while (!sense.is_active() && is_running) {
+        while (!sense.is_active()) {
             std::printf("wait for connection...\n"); sense.set_open();
             std::this_thread::sleep_for(std::chrono::milliseconds(1000));
         }
