@@ -37,15 +37,23 @@ int main() {
 
     // update the rgb color of the device.
     sense.set_led(64, 0, 255);
+    auto is_running = true;
 
     // get input while the device is reachable.
-    while (sense.is_active()) {
-        auto buttons = sense.get_buttons(); auto axis = sense.get_axis();
-        const auto trigger = axis[sense::AXIS_RIGHT_TRIGGER];
-        const auto button = buttons[sense::BUTTON_CROSS];
+    while(is_running) {
+        while (!sense.is_active() && is_running) {
+            std::printf("wait for connection...\n"); sense.set_open();
+            std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+        }
+        while (sense.is_active() && is_running) {
+            auto buttons = sense.get_buttons(); auto axis = sense.get_axis();
+            const auto trigger = axis[sense::AXIS_RIGHT_TRIGGER];
+            const auto button = buttons[sense::BUTTON_CROSS];
+            if (buttons[sense::BUTTON_SHARE]) { is_running = false; }
 
-        std::printf("trigger value %i, button value: %i\n", trigger, button);
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+            std::printf("trigger value %i, button value: %i\n", trigger, button);
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        }
     }
     return 0;
 }

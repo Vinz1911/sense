@@ -33,7 +33,7 @@
 namespace sense {
     static constexpr auto MEMORY_ORDER = std::memory_order::relaxed;
 
-    DualSense::DualSense(const char* path, const uint16_t timeout): device_path_(path), timeout_(timeout), is_log_(false) {
+    DualSense::DualSense(const char* path, const uint16_t timeout): device_path_(path), timeout_(timeout) {
         reset_input();
     }
 

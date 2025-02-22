@@ -103,17 +103,17 @@ namespace sense {
         /**
          * @brief stores the devices path.
          */
-        const char* device_path_;
+        const char* device_path_ = {};
 
         /**
          * @brief time before timout appears.
          */
-        uint16_t timeout_;
+        uint16_t timeout_ = {};
 
         /**
          * @brief logging state.
          */
-        bool is_log_;
+        bool is_log_ = {};
 
         /**
          * @brief pathfinder to get and set path values.
@@ -133,17 +133,17 @@ namespace sense {
         /**
          * @brief status if the device is active.
          */
-        std::atomic<bool> is_active_ = false;
+        std::atomic<bool> is_active_ = {};
 
         /**
          * @brief button values.
          */
-        std::map<SenseButtonConstants, int16_t> buttons_;
+        std::map<SenseButtonConstants, int16_t> buttons_ = {};
 
         /**
          * @brief axis values.
          */
-        std::map<SenseAxisConstants, int16_t> axis_;
+        std::map<SenseAxisConstants, int16_t> axis_ = {};
 
         /**
          * @brief stores the js event data.
@@ -158,7 +158,7 @@ namespace sense {
         /**
          * @brief check if terminated.
          */
-        std::atomic<bool> is_terminated_ = {false};
+        std::atomic<bool> is_terminated_ = {};
 
         /**
          * @brief thread pool.
@@ -168,12 +168,12 @@ namespace sense {
         /**
          *@brief mutex lock for thread safety.
          */
-        std::mutex mutex_lock_;
+        std::mutex mutex_lock_ = {};
 
         /**
          * @brief the current time for measuring possible timeout.
          */
-        std::atomic<std::chrono::high_resolution_clock::time_point> current_time_;
+        std::atomic<std::chrono::high_resolution_clock::time_point> current_time_ = {};
 
         /**
          * @brief set the input thread.
