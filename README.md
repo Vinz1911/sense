@@ -29,9 +29,9 @@ cmake ..
 make && make install
 ```
 
-## Access LED's:
+## UDEV Rule:
 ```shell
-# in "/etc/udev/rules.d/" for gpio group in rasberry pi
+# in "/etc/udev/rules.d/" for gpio group on raspberry pi
 sudo touch 99-leds.rules
 SUBSYSTEM=="leds", ACTION=="add", PROGRAM="/bin/sh -c 'chgrp -R gpio /sys%p && chmod -R g=u /sys%p'"
 ```
