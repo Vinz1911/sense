@@ -1,8 +1,11 @@
 # Sense
-**Sense** is a simple and easy way to deal with the Dual Sense Controller in Linux. It's fast and based on the `linux/joystick.h`. Reads the input from `/dev/input/js0`. 
+**Sense** is a lightweight and efficient solution for using the DualSense controller on Linux.
+It provides a fast and reliable way to process controller input by utilizing the `linux/joystick.h` interface and reading data directly from `/dev/input/js0` or a specified path.
+Designed for simplicity, Sense ensures smooth and responsive interaction without unnecessary complexity. 
+For different kind of applications, it offers a seamless experience with minimal overhead. 
 
 ## License:
-[![License](https://img.shields.io/badge/License-MIT-blue.svg?longCache=true&style=flat)](https://github.com/Vinz1911/Sense/blob/master/LICENSE)
+[![License](https://img.shields.io/badge/License-MIT-blue.svg?longCache=true&style=flat)](https://github.com/Vinz1911/sense/blob/master/LICENSE)
 
 ## C++ Version:
 [![C++23](https://img.shields.io/badge/C++-23-blue.svg?logo=c%2B%2B&style=flat)](https://isocpp.org)
@@ -18,7 +21,6 @@ if(!sense.set_open()) { printf("Failed to open path\n"); return -1; }
 ```
 
 ## Build and Install:
-Compile the projects using `cmake`.
 ```sh
 # in root directory
 mkdir build
@@ -27,7 +29,7 @@ cmake ..
 make && make install
 ```
 
-## Create udev rule to control LEDs:
+## Access LED's:
 ```shell
 # in "/etc/udev/rules.d/" for gpio group in rasberry pi
 sudo touch 99-leds.rules
