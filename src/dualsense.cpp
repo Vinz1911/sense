@@ -33,15 +33,19 @@
 namespace sense {
     static constexpr auto MEMORY_ORDER = std::memory_order::relaxed;
 
-    DualSense::DualSense(const char* path, const uint16_t timeout): device_path_(path), timeout_(timeout) {
-        buttons_ = { { BUTTON_CROSS, 0 }, { BUTTON_CIRCLE, 0 }, { BUTTON_TRIANGLE, 0 }, { BUTTON_SQUARE, 0 }, { BUTTON_SHOULDER_LEFT, 0 }, { BUTTON_SHOULDER_RIGHT, 0 }, { BUTTON_TRIGGER_LEFT, 0 }, { BUTTON_TRIGGER_RIGHT, 0 }, { BUTTON_SHARE, 0 }, { BUTTON_OPTIONS, 0 }, { BUTTON_PS, 0 }, { BUTTON_THUMB_LEFT, 0 }, { BUTTON_THUMB_RIGHT, 0 } };
-        axis_ = { { AXIS_LEFT_THUMB_X, 0 }, { AXIS_LEFT_THUMB_Y, 0 }, { AXIS_LEFT_TRIGGER, -32767 }, { AXIS_RIGHT_THUMB_X, 0 }, { AXIS_RIGHT_THUMB_Y, 0 }, { AXIS_RIGHT_TRIGGER, -32767 }, { AXIS_D_PAD_LEFT_RIGHT, 0 }, { AXIS_D_PAD_UP_DOWN, 0 } };
+    DualSense::DualSense(const char* path, const uint16_t timeout): device_path_(path), timeout_(timeout), is_log_(false) {
+        reset_input();
     }
 
     DualSense::~DualSense() { set_close(); }
 
+    void DualSense::reset_input() {
+        buttons_ = { { BUTTON_CROSS, 0 }, { BUTTON_CIRCLE, 0 }, { BUTTON_TRIANGLE, 0 }, { BUTTON_SQUARE, 0 }, { BUTTON_SHOULDER_LEFT, 0 }, { BUTTON_SHOULDER_RIGHT, 0 }, { BUTTON_TRIGGER_LEFT, 0 }, { BUTTON_TRIGGER_RIGHT, 0 }, { BUTTON_SHARE, 0 }, { BUTTON_OPTIONS, 0 }, { BUTTON_PS, 0 }, { BUTTON_THUMB_LEFT, 0 }, { BUTTON_THUMB_RIGHT, 0 } };
+        axis_ = { { AXIS_LEFT_THUMB_X, 0 }, { AXIS_LEFT_THUMB_Y, 0 }, { AXIS_LEFT_TRIGGER, -32767 }, { AXIS_RIGHT_THUMB_X, 0 }, { AXIS_RIGHT_THUMB_Y, 0 }, { AXIS_RIGHT_TRIGGER, -32767 }, { AXIS_D_PAD_LEFT_RIGHT, 0 }, { AXIS_D_PAD_UP_DOWN, 0 } };
+    }
+
     bool DualSense::set_open() {
-        js_event_path_.store(open(device_path_, O_RDONLY), MEMORY_ORDER);
+        is_terminated_.store(false, MEMORY_ORDER); js_event_path_.store(open(device_path_, O_RDONLY), MEMORY_ORDER);
         if (timeout_ != 0) { io_event_path_.store(open(get_sensor_path().c_str(), O_RDONLY), MEMORY_ORDER); }
         if (js_event_path_.load(MEMORY_ORDER) != -1) { this->set_input_thread(); is_active_.store(true, MEMORY_ORDER); }
         if (io_event_path_.load(MEMORY_ORDER) != -1 and timeout_ != 0) { this->set_timestamp_thread(); this->set_timeout_thread(); }
@@ -51,12 +55,16 @@ namespace sense {
     bool DualSense::set_close() {
         is_terminated_.store(true, MEMORY_ORDER);
         for (auto &thread : thread_pool_) { if (thread.joinable()) { thread.join(); } }
-        is_active_.store(false, MEMORY_ORDER);
+        is_active_.store(false, MEMORY_ORDER); thread_pool_ = {}; reset_input();
         return close(js_event_path_.load(MEMORY_ORDER)) != -1 and close(io_event_path_.load(MEMORY_ORDER)) != -1;
     }
 
     bool DualSense::is_active() const {
         return is_active_.load(MEMORY_ORDER);
+    }
+
+    void DualSense::set_logging(const bool enable) {
+        is_log_ = enable;
     }
 
     std::map<SenseButtonConstants, int16_t> DualSense::get_buttons() {
@@ -76,7 +84,7 @@ namespace sense {
                 device_found = true; break;
             }
         }
-        if (!device_found) { std::printf("[Sense]: error, no valid rgb device found.\n"); return; }
+        if (!device_found) { if (is_log_) { std::printf("[Sense]: error, no valid rgb device found.\n"); } return; }
         const std::string values = std::to_string(red) + " " + std::to_string(green) + " " + std::to_string(blue);
         pathfinder_.set_value(rgb_path, values); pathfinder_.set_value(brightness_path, std::to_string(brightness));
     }
@@ -110,7 +118,7 @@ namespace sense {
                     std::lock_guard lock(mutex_lock_);
                     if (js_event_.type == JS_EVENT_BUTTON) { buttons_[static_cast<SenseButtonConstants>(js_event_.number)] = js_event_.value; }
                     if (js_event_.type == JS_EVENT_AXIS) { axis_[static_cast<SenseAxisConstants>(js_event_.number)] = js_event_.value; }
-                } else { std::printf("[Sense]: error during read, terminating.\n"); set_close(); break; }
+                } else { if (is_log_) { std::printf("[Sense]: error during read, terminating.\n"); } set_close(); break; }
             }
         }); thread_pool_[0].detach();
     }
@@ -132,7 +140,7 @@ namespace sense {
             const auto timeout = std::max(static_cast<uint16_t>(100), timeout_);
             while (!is_terminated_.load(MEMORY_ORDER)) {
                 if (std::chrono::high_resolution_clock::now() >= current_time_.load(MEMORY_ORDER) + std::chrono::milliseconds(timeout)) {
-                    std::printf("[Sense]: error, run into timeout.\n"); this->set_close();
+                    if (is_log_) { std::printf("[Sense]: error, run into timeout.\n"); this->set_close(); }
                 } std::this_thread::sleep_for(std::chrono::milliseconds(10));
             }
         }); thread_pool_[2].detach();

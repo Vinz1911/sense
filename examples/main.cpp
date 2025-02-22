@@ -27,6 +27,7 @@
 
 int main() {
     auto sense = sense::DualSense();
+    sense.set_logging(true);
     if(!sense.set_open()) { printf("failed to open path\n"); return 1; }
 
     // get device information's like charging status or capacity.
@@ -45,5 +46,6 @@ int main() {
 
         std::printf("trigger value %i, button value: %i\n", trigger, button);
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
-    } return 0;
+    }
+    return 0;
 }

@@ -54,6 +54,12 @@ namespace sense {
         [[nodiscard]] bool is_active() const;
 
         /**
+         * @brief set logging.
+         * @param enable enable or disable logging.
+         */
+        void set_logging(bool enable);
+
+        /**
          * @brief open the connection to a device's path.
          * @return bool indicates success.
          */
@@ -103,6 +109,11 @@ namespace sense {
          * @brief time before timout appears.
          */
         uint16_t timeout_;
+
+        /**
+         * @brief logging state.
+         */
+        bool is_log_;
 
         /**
          * @brief pathfinder to get and set path values.
@@ -178,6 +189,11 @@ namespace sense {
          * @brief set the timeout thread.
          */
         void set_timeout_thread();
+
+        /**
+         * @brief set default input values.
+         */
+        void reset_input();
 
         /**
          * @brief get the sensor event path.
