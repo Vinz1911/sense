@@ -62,6 +62,3 @@ printf("capacity: %s\n", info[sense::CAPACITY].c_str());
 
 sense.set_led(128, 0, 255);
 ```
-
-## Author:
-👨🏼‍💻 [Vinzenz Weist](https://github.com/Vinz1911)
