@@ -112,7 +112,7 @@ namespace sense {
         const std::string target = "Motion Sensors";
         for (const auto &entry : std::filesystem::directory_iterator("/dev/input/")) {
             if (entry.path().string().find("event") == std::string::npos) { continue; }
-            int fd = open(entry.path().c_str(), O_RDONLY); if (fd < 0) { continue; }
+            const int fd = open(entry.path().c_str(), O_RDONLY); if (fd < 0) { continue; }
             if (char name[256] = {}; ioctl(fd, EVIOCGNAME(sizeof(name)), name) >= 0) {
                 if (std::string(name).find(target) != std::string::npos) { close(fd); return entry.path().string(); }
             } close(fd);
@@ -148,7 +148,7 @@ namespace sense {
             const auto timeout = std::max(static_cast<uint16_t>(100), timeout_);
             while (!is_terminated_.load(STD_MEMORY_ORDER)) {
                 if (std::chrono::high_resolution_clock::now() >= current_time_.load(STD_MEMORY_ORDER) + std::chrono::milliseconds(timeout)) {
-                    if (is_log_) { std::printf("[Sense]: error, run into timeout.\n"); this->set_close(); }
+                    if (is_log_) { std::printf("[Sense]: error, run into timeout.\n"); } this->set_close();
                 } std::this_thread::sleep_for(std::chrono::milliseconds(10));
             }
         }); thread_pool_[2].detach();
