@@ -31,7 +31,7 @@
 #include "sense/dualsense.h"
 
 namespace sense {
-    static constexpr auto MEMORY_ORDER = std::memory_order::relaxed;
+    static constexpr auto STD_MEMORY_ORDER = std::memory_order::relaxed;
 
     DualSense::DualSense(const char* path, const uint16_t timeout): device_path_(path), timeout_(timeout) {
         reset_input();
@@ -53,22 +53,22 @@ namespace sense {
     }
 
     bool DualSense::set_open() {
-        is_terminated_.store(false, MEMORY_ORDER); js_event_path_.store(open(device_path_, O_RDONLY), MEMORY_ORDER);
-        if (timeout_ != 0) { io_event_path_.store(open(get_sensor_path().c_str(), O_RDONLY), MEMORY_ORDER); }
-        if (js_event_path_.load(MEMORY_ORDER) != -1) { this->set_input_thread(); is_active_.store(true, MEMORY_ORDER); }
-        if (io_event_path_.load(MEMORY_ORDER) != -1 and timeout_ != 0) { this->set_timestamp_thread(); this->set_timeout_thread(); }
-        return js_event_path_.load(MEMORY_ORDER) != -1 and io_event_path_.load(MEMORY_ORDER) != -1;
+        is_terminated_.store(false, STD_MEMORY_ORDER); js_event_path_.store(open(device_path_, O_RDONLY), STD_MEMORY_ORDER);
+        if (timeout_ != 0) { io_event_path_.store(open(get_sensor_path().c_str(), O_RDONLY), STD_MEMORY_ORDER); }
+        if (js_event_path_.load(STD_MEMORY_ORDER) != -1) { this->set_input_thread(); is_active_.store(true, STD_MEMORY_ORDER); }
+        if (io_event_path_.load(STD_MEMORY_ORDER) != -1 and timeout_ != 0) { this->set_timestamp_thread(); this->set_timeout_thread(); }
+        return js_event_path_.load(STD_MEMORY_ORDER) != -1 and io_event_path_.load(STD_MEMORY_ORDER) != -1;
     }
 
     bool DualSense::set_close() {
-        is_terminated_.store(true, MEMORY_ORDER);
+        is_terminated_.store(true, STD_MEMORY_ORDER);
         for (auto &thread : thread_pool_) { if (thread.joinable()) { thread.join(); } }
-        is_active_.store(false, MEMORY_ORDER); thread_pool_ = {}; reset_input();
-        return close(js_event_path_.load(MEMORY_ORDER)) != -1 and close(io_event_path_.load(MEMORY_ORDER)) != -1;
+        is_active_.store(false, STD_MEMORY_ORDER); thread_pool_ = {}; reset_input();
+        return close(js_event_path_.load(STD_MEMORY_ORDER)) != -1 and close(io_event_path_.load(STD_MEMORY_ORDER)) != -1;
     }
 
     bool DualSense::is_active() const {
-        return is_active_.load(MEMORY_ORDER);
+        return is_active_.load(STD_MEMORY_ORDER);
     }
 
     void DualSense::set_logging(const bool enable) {
@@ -121,8 +121,8 @@ namespace sense {
 
     void DualSense::set_input_thread() {
         thread_pool_[0] = std::thread([this] {
-            while (!is_terminated_.load(MEMORY_ORDER)) {
-                if (const ssize_t bytes = read(js_event_path_.load(MEMORY_ORDER), &js_event_, sizeof(js_event_)); bytes == sizeof(js_event_)) {
+            while (!is_terminated_.load(STD_MEMORY_ORDER)) {
+                if (const ssize_t bytes = read(js_event_path_.load(STD_MEMORY_ORDER), &js_event_, sizeof(js_event_)); bytes == sizeof(js_event_)) {
                     std::lock_guard lock(mutex_lock_);
                     if (js_event_.type == JS_EVENT_BUTTON) { buttons_[static_cast<SenseButtonConstants>(js_event_.number)] = js_event_.value; }
                     if (js_event_.type == JS_EVENT_AXIS) { axis_[static_cast<SenseAxisConstants>(js_event_.number)] = js_event_.value; }
@@ -132,12 +132,12 @@ namespace sense {
     }
 
     void DualSense::set_timestamp_thread() {
-        current_time_.store(std::chrono::high_resolution_clock::now(), MEMORY_ORDER);
+        current_time_.store(std::chrono::high_resolution_clock::now(), STD_MEMORY_ORDER);
         thread_pool_[1] = std::thread([this] {
-            while (!is_terminated_.load(MEMORY_ORDER)) {
-                if (const ssize_t bytes = read(io_event_path_.load(MEMORY_ORDER), &io_event_, sizeof(io_event_)); bytes == sizeof(io_event_)) {
+            while (!is_terminated_.load(STD_MEMORY_ORDER)) {
+                if (const ssize_t bytes = read(io_event_path_.load(STD_MEMORY_ORDER), &io_event_, sizeof(io_event_)); bytes == sizeof(io_event_)) {
                     if (io_event_.type != EV_MSC or io_event_.code != MSC_TIMESTAMP) { continue; }
-                    current_time_.store(std::chrono::high_resolution_clock::now(), MEMORY_ORDER);
+                    current_time_.store(std::chrono::high_resolution_clock::now(), STD_MEMORY_ORDER);
                 }
             }
         }); thread_pool_[1].detach();
@@ -146,8 +146,8 @@ namespace sense {
     void DualSense::set_timeout_thread() {
         thread_pool_[2] = std::thread([this] {
             const auto timeout = std::max(static_cast<uint16_t>(100), timeout_);
-            while (!is_terminated_.load(MEMORY_ORDER)) {
-                if (std::chrono::high_resolution_clock::now() >= current_time_.load(MEMORY_ORDER) + std::chrono::milliseconds(timeout)) {
+            while (!is_terminated_.load(STD_MEMORY_ORDER)) {
+                if (std::chrono::high_resolution_clock::now() >= current_time_.load(STD_MEMORY_ORDER) + std::chrono::milliseconds(timeout)) {
                     if (is_log_) { std::printf("[Sense]: error, run into timeout.\n"); this->set_close(); }
                 } std::this_thread::sleep_for(std::chrono::milliseconds(10));
             }
