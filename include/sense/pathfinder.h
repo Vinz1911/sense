@@ -27,10 +27,15 @@
 #include <fstream>
 
 namespace sense {
-    class Pathfinder {
     /**
      * @brief Pathfinder is a class to handle to read and write to a fstream.
      */
+    class Pathfinder {
+        /**
+         * @brief file stream
+         */
+        std::fstream stream_;
+
     public:
         /**
          * @brief create instance of Pathfinder.
@@ -57,11 +62,5 @@ namespace sense {
          * @param value the value to write.
          */
         void set_value(const std::string& path, const std::string& value);
-
-    private:
-        /**
-         * @brief file stream
-         */
-        std::fstream stream_;
     };
 } // namespace sense

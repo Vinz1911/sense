@@ -33,83 +33,10 @@
 #include "pathfinder.h"
 
 namespace sense {
-    class DualSense {
     /**
      * @brief DualSense is a class to get input from Dual Sense Device.
      */
-    public:
-        /**
-         * @brief create instance of `DualSense`.
-         *
-         * @param path input path, default is "/dev/input/js0".
-         * @param timeout the time before connection gets closed because of non responsibility.
-         */
-        explicit DualSense(const char* path = "/dev/input/js0", uint16_t timeout = 1000);
-
-        /**
-         * @brief destroy instance of `DualSense`.
-         */
-        ~DualSense();
-
-        /**
-         * @brief status if the device is active.
-         */
-        [[nodiscard]] bool is_active() const;
-
-        /**
-         * @brief set logging.
-         *
-         * @param enable enable or disable logging.
-         */
-        void set_logging(bool enable);
-
-        /**
-         * @brief open the connection to a device's path.
-         *
-         * @return bool indicates success.
-         */
-        bool set_open();
-
-        /**
-         * @brief close the connection to a device's path.
-         *
-         * @return bool indicates success.
-         */
-        bool set_close();
-
-        /**
-         * @brief get buttons.
-         *
-         * @return map of buttons and values.
-         */
-        std::map<SenseButtonConstants, int16_t> get_buttons();
-
-        /**
-         * @brief get axis.
-         *
-         * @return map of axis and values.
-         */
-        std::map<SenseAxisConstants, int16_t> get_axis();
-
-        /**
-         * @brief set the intensity values for Red, Green and Blue.
-         *
-         * @param red set level 0-255.
-         * @param green set level 0-255.
-         * @param blue set level 0-255.
-         * @param brightness set level 0-255.
-         */
-        void set_led(uint8_t red, uint8_t green, uint8_t blue, uint8_t brightness = 255);
-
-        /**
-         * @brief get status infos from the device.
-         *
-         * @return a vector containing device info's.
-         * [sense::STATUS] or [sense::CAPACITY].
-         */
-        std::map<SenseStatusConstants, std::string> get_device_info();
-
-    private:
+    class DualSense {
         /**
          * @brief stores the devices path.
          */
@@ -209,5 +136,77 @@ namespace sense {
          * @brief get the sensor event path.
          */
         static std::string get_sensor_path();
+
+    public:
+        /**
+         * @brief create instance of `DualSense`.
+         *
+         * @param path input path, default is "/dev/input/js0".
+         * @param timeout the time before connection gets closed because of non responsibility.
+         */
+        explicit DualSense(const char* path = "/dev/input/js0", uint16_t timeout = 1000);
+
+        /**
+         * @brief destroy instance of `DualSense`.
+         */
+        ~DualSense();
+
+        /**
+         * @brief status if the device is active.
+         */
+        [[nodiscard]] bool is_active() const;
+
+        /**
+         * @brief set logging.
+         *
+         * @param enable enable or disable logging.
+         */
+        void set_logging(bool enable);
+
+        /**
+         * @brief open the connection to a device's path.
+         *
+         * @return bool indicates success.
+         */
+        bool set_open();
+
+        /**
+         * @brief close the connection to a device's path.
+         *
+         * @return bool indicates success.
+         */
+        bool set_close();
+
+        /**
+         * @brief get buttons.
+         *
+         * @return map of buttons and values.
+         */
+        std::map<SenseButtonConstants, int16_t> get_buttons();
+
+        /**
+         * @brief get axis.
+         *
+         * @return map of axis and values.
+         */
+        std::map<SenseAxisConstants, int16_t> get_axis();
+
+        /**
+         * @brief set the intensity values for Red, Green and Blue.
+         *
+         * @param red set level 0-255.
+         * @param green set level 0-255.
+         * @param blue set level 0-255.
+         * @param brightness set level 0-255.
+         */
+        void set_led(uint8_t red, uint8_t green, uint8_t blue, uint8_t brightness = 255);
+
+        /**
+         * @brief get status infos from the device.
+         *
+         * @return a vector containing device info's.
+         * [sense::STATUS] or [sense::CAPACITY].
+         */
+        std::map<SenseStatusConstants, std::string> get_device_info();
     };
 } // namespace sense
