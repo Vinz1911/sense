@@ -28,6 +28,7 @@
 
 namespace sense {
     Pathfinder::Pathfinder() = default;
+
     Pathfinder::~Pathfinder() = default;
 
     std::string Pathfinder::get_value(const std::string& path) {

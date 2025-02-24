@@ -22,7 +22,6 @@
  * SOFTWARE.
  */
 
-
 #pragma once
 #include <array>
 #include <string>
@@ -35,9 +34,13 @@
 
 namespace sense {
     class DualSense {
+    /**
+     * @brief DualSense is a class to get input from Dual Sense Device.
+     */
     public:
         /**
          * @brief create instance of `DualSense`.
+         *
          * @param path input path, default is "/dev/input/js0".
          * @param timeout the time before connection gets closed because of non responsibility.
          */
@@ -55,36 +58,42 @@ namespace sense {
 
         /**
          * @brief set logging.
+         *
          * @param enable enable or disable logging.
          */
         void set_logging(bool enable);
 
         /**
          * @brief open the connection to a device's path.
+         *
          * @return bool indicates success.
          */
         bool set_open();
 
         /**
          * @brief close the connection to a device's path.
+         *
          * @return bool indicates success.
          */
         bool set_close();
 
         /**
          * @brief get buttons.
+         *
          * @return map of buttons and values.
          */
         std::map<SenseButtonConstants, int16_t> get_buttons();
 
         /**
          * @brief get axis.
+         *
          * @return map of axis and values.
          */
         std::map<SenseAxisConstants, int16_t> get_axis();
 
         /**
          * @brief set the intensity values for Red, Green and Blue.
+         *
          * @param red set level 0-255.
          * @param green set level 0-255.
          * @param blue set level 0-255.
@@ -94,6 +103,7 @@ namespace sense {
 
         /**
          * @brief get status infos from the device.
+         *
          * @return a vector containing device info's.
          * [sense::STATUS] or [sense::CAPACITY].
          */

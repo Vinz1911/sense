@@ -28,28 +28,33 @@
 
 namespace sense {
     class Pathfinder {
+    /**
+     * @brief Pathfinder is a class to handle to read and write to a fstream.
+     */
     public:
         /**
-         * @brief create instance of `Pathfinder`
+         * @brief create instance of Pathfinder.
          */
         Pathfinder();
 
         /**
-         * @brief destroy instance of `Pathfinder`
+         * @brief destroy instance of Pathfinder.
          */
         ~Pathfinder();
 
         /**
-         * @brief get data from a fstream
-         * @param path the path to read from
-         * @return the value
+         * @brief get data from a fstream.
+         *
+         * @param path the path to read from.
+         * @return the value.
          */
         std::string get_value(const std::string& path);
 
         /**
-         * @brief set data to a fstream
-         * @param path the path to write to
-         * @param value the value to write
+         * @brief set data to a fstream.
+         *
+         * @param path the path to write to.
+         * @param value the value to write.
          */
         void set_value(const std::string& path, const std::string& value);
 

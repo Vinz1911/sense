@@ -56,15 +56,15 @@ namespace sense {
         is_terminated_.store(false, STD_MEMORY_ORDER); js_event_path_.store(open(device_path_, O_RDONLY), STD_MEMORY_ORDER);
         if (timeout_ != 0) { io_event_path_.store(open(get_sensor_path().c_str(), O_RDONLY), STD_MEMORY_ORDER); }
         if (js_event_path_.load(STD_MEMORY_ORDER) != -1) { this->set_input_thread(); is_active_.store(true, STD_MEMORY_ORDER); }
-        if (io_event_path_.load(STD_MEMORY_ORDER) != -1 and timeout_ != 0) { this->set_timestamp_thread(); this->set_timeout_thread(); }
-        return js_event_path_.load(STD_MEMORY_ORDER) != -1 and io_event_path_.load(STD_MEMORY_ORDER) != -1;
+        if (io_event_path_.load(STD_MEMORY_ORDER) != -1 && timeout_ != 0) { this->set_timestamp_thread(); this->set_timeout_thread(); }
+        return js_event_path_.load(STD_MEMORY_ORDER) != -1 && io_event_path_.load(STD_MEMORY_ORDER) != -1;
     }
 
     bool DualSense::set_close() {
         is_terminated_.store(true, STD_MEMORY_ORDER);
         for (auto &thread : thread_pool_) { if (thread.joinable()) { thread.join(); } }
         is_active_.store(false, STD_MEMORY_ORDER); thread_pool_ = {}; reset_input();
-        return close(js_event_path_.load(STD_MEMORY_ORDER)) != -1 and close(io_event_path_.load(STD_MEMORY_ORDER)) != -1;
+        return close(js_event_path_.load(STD_MEMORY_ORDER)) != -1 && close(io_event_path_.load(STD_MEMORY_ORDER)) != -1;
     }
 
     bool DualSense::is_active() const {
@@ -85,6 +85,7 @@ namespace sense {
 
     void DualSense::set_led(const uint8_t red, const uint8_t green, const uint8_t blue, const uint8_t brightness) {
         std::string rgb_path; std::string brightness_path; bool device_found = false;
+
         for (const auto& entry : std::filesystem::directory_iterator("/sys/class/leds/")) {
             if (entry.is_directory() && entry.path().string().find(":rgb:indicator") != std::string::npos) {
                 rgb_path = entry.path().string() + "/multi_intensity";
@@ -92,6 +93,7 @@ namespace sense {
                 device_found = true; break;
             }
         }
+
         if (!device_found) { if (is_log_) { std::printf("[Sense]: error, no valid rgb device found.\n"); } return; }
         const std::string values = std::to_string(red) + " " + std::to_string(green) + " " + std::to_string(blue);
         pathfinder_.set_value(rgb_path, values); pathfinder_.set_value(brightness_path, std::to_string(brightness));
@@ -99,6 +101,7 @@ namespace sense {
 
     std::map<SenseStatusConstants, std::string> DualSense::get_device_info() {
         std::map<SenseStatusConstants, std::string> device_info = { { STATUS, "" }, { CAPACITY, "" } };
+
         for (const std::string power_supply_path = "/sys/class/power_supply/"; const auto& entry : std::filesystem::directory_iterator(power_supply_path)) {
             if (entry.is_directory() && entry.path().filename().string().rfind("ps-controller-battery-", 0) == 0) {
                 const std::string path = entry.path().string();
@@ -110,6 +113,7 @@ namespace sense {
 
     std::string DualSense::get_sensor_path() {
         const std::string target = "Motion Sensors";
+
         for (const auto &entry : std::filesystem::directory_iterator("/dev/input/")) {
             if (entry.path().string().find("event") == std::string::npos) { continue; }
             const int fd = open(entry.path().c_str(), O_RDONLY); if (fd < 0) { continue; }
@@ -128,7 +132,8 @@ namespace sense {
                     if (js_event_.type == JS_EVENT_AXIS) { axis_[static_cast<SenseAxisConstants>(js_event_.number)] = js_event_.value; }
                 } else { if (is_log_) { std::printf("[Sense]: error during read, terminating.\n"); } set_close(); break; }
             }
-        }); thread_pool_[0].detach();
+        });
+        thread_pool_[0].detach();
     }
 
     void DualSense::set_timestamp_thread() {
@@ -136,11 +141,12 @@ namespace sense {
         thread_pool_[1] = std::thread([this] {
             while (!is_terminated_.load(STD_MEMORY_ORDER)) {
                 if (const ssize_t bytes = read(io_event_path_.load(STD_MEMORY_ORDER), &io_event_, sizeof(io_event_)); bytes == sizeof(io_event_)) {
-                    if (io_event_.type != EV_MSC or io_event_.code != MSC_TIMESTAMP) { continue; }
+                    if (io_event_.type != EV_MSC || io_event_.code != MSC_TIMESTAMP) { continue; }
                     current_time_.store(std::chrono::high_resolution_clock::now(), STD_MEMORY_ORDER);
                 }
             }
-        }); thread_pool_[1].detach();
+        });
+        thread_pool_[1].detach();
     }
 
     void DualSense::set_timeout_thread() {
@@ -151,6 +157,7 @@ namespace sense {
                     if (is_log_) { std::printf("[Sense]: error, run into timeout.\n"); } this->set_close();
                 } std::this_thread::sleep_for(std::chrono::milliseconds(10));
             }
-        }); thread_pool_[2].detach();
+        });
+        thread_pool_[2].detach();
     }
 } // namespace sense
